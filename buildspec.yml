@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing dependencies..."
+  pre_build:
+    commands:
+
+  build:
+    commands:
+      - apt-get update -y
+      - apt-get install -y docker.io
+
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 724772092182.dkr.ecr.eu-north-1.amazonaws.com
+      
+      - echo "Building the Docker image..."
+      - docker build -t second-time .
+      
+      - docker tag second-time:latest 724772092182.dkr.ecr.eu-north-1.amazonaws.com/second-time:latest
+      - echo "Pushing the Docker image to ECR..."
+      - docker push 724772092182.dkr.ecr.eu-north-1.amazonaws.com/second-time:latest
+
+      - | 
+        echo '[
+        {
+          "name": "container2",
+          "imageUri": "724772092182.dkr.ecr.eu-north-1.amazonaws.com/second-time:latest"
+          }
+        ]' >imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
